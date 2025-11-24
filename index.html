@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformice-Clone Prototype</title>
+
+<style>
+  html,body {
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    background:#222;
+    font-family:sans-serif;
+    color:#fff;
+  }
+
+  #lobby, #game {
+    width:100vw;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+  }
+  #game { display:none; background:#87CEEB; }
+
+  #roomList {
+    background:#333;
+    padding:10px;
+    border-radius:6px;
+    width:300px;
+    max-height:200px;
+    overflow-y:auto;
+    margin-top:10px;
+  }
+
+  #canvas {
+    background:url('https://i.imgur.com/YqTnQ0G.png') repeat-x bottom;
+    background-size:cover;
+    border:2px solid #333;
+  }
+
+  #ui {
+    position:absolute;
+    top:10px;
+    left:10px;
+    background:rgba(0,0,0,0.5);
+    padding:8px 12px;
+    border-radius:6px;
+  }
+  #ui button { margin:2px; }
+
+
+  /* ===============================================================
+     TRANSFORMICE UI (NEW)
+     =============================================================== */
+
+  /* --- Top Bar --- */
+  #topBar {
+    position:absolute;
+    top:0;
+    width:100%;
+    height:32px;
+    background:linear-gradient(#4f3d2f, #2f2217);
+    border-bottom:2px solid #1a120b;
+    color:#fff4d0;
+    font-family:Verdana;
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 10px;
+    text-shadow:1px 1px 2px #000;
+    letter-spacing:0.5px;
+    pointer-events:none;
+  }
+
+  /* --- Chat Panel --- */
+  #chatContainer {
+    position:absolute;
+    bottom:10px;
+    left:10px;
+    width:330px;
+    height:180px;
+    background:rgba(0,0,0,0.55);
+    border:2px solid #5a482d;
+    border-radius:6px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  #chatTabs {
+    display:flex;
+    gap:3px;
+    padding:4px;
+  }
+
+  .chatTab {
+    background:#2b2120;
+    color:#ccb48a;
+    border:1px solid #6d563f;
+    border-radius:4px;
+    font-size:12px;
+    padding:2px 6px;
+    cursor:pointer;
+  }
+
+  .chatTab.active {
+    background:#5c483b;
+  }
+
+  #chatMessages {
+    flex:1;
+    margin:4px;
+    padding:4px;
+    overflow-y:auto;
+    font-size:12px;
+  }
+
+  #chatInput {
+    width:calc(100% - 10px);
+    margin:5px;
+    font-size:12px;
+    padding:3px;
+    border-radius:4px;
+    border:none;
+    outline:none;
+  }
+
+  #chatMessages::-webkit-scrollbar,
+  #playerEntries::-webkit-scrollbar {
+    width:8px;
+  }
+  #chatMessages::-webkit-scrollbar-thumb,
+  #playerEntries::-webkit-scrollbar-thumb {
+    background:#5a482d;
+    border-radius:6px;
+  }
+
+  /* --- Player List --- */
+  #playerList {
+    position:absolute;
+    bottom:10px;
+    right:10px;
+    width:210px;
+    height:240px;
+    background:rgba(0,0,0,0.55);
+    border:2px solid #5a482d;
+    border-radius:6px;
+    padding:5px;
+  }
+
+  #playerListTitle {
+    text-align:center;
+    font-weight:bold;
+    margin-bottom:5px;
+  }
+
+  #playerEntries {
+    overflow-y:auto;
+    height:200px;
+    font-size:12px;
+  }
+
+  /* --- Icon bar (top right) --- */
+  #uiButtons {
+    position:absolute;
+    top:35px;
+    right:10px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .uiBtn {
+    width:32px;
+    height:32px;
+    background:rgba(0,0,0,0.6);
+    border:2px solid #5a482d;
+    border-radius:5px;
+    padding:2px;
+    cursor:pointer;
+  }
+
+  .uiBtn img {
+    width:100%;
+    height:100%;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ========================= LOBBY ========================= -->
+<div id="lobby">
+  <h1>Transformice-Clone Lobby</h1>
+  <input id="username" placeholder="Enter username" />
+  <div style="margin-top:10px;">
+    <button id="createRoomBtn">Create Room</button>
+    <button id="refreshRoomsBtn">Refresh Rooms</button>
+  </div>
+  <div id="roomList"></div>
+</div>
+
+
+<!-- ========================= GAME ========================= -->
+<div id="game">
+  <canvas id="canvas" width="960" height="540"></canvas>
+
+  <div id="ui">
+    <span id="scoreLabel">Cheese: 0</span><br>
+    <button id="toggleShaman">Toggle Shaman</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+</div>
+
+
+<!-- ========================= TRANSFORMICE UI ========================= -->
+
+<!-- Top bar -->
+<div id="topBar">
+  <div id="roomInfo">Stovedove#0000 • @7704444</div>
+  <div id="timer">01:22</div>
+  <div id="score">Șoareci: 20</div>
+  <div id="shamanInfo">Șaman: <span id="shamanName">Mitogodd</span></div>
+</div>
+
+<!-- Chat -->
+<div id="chatContainer">
+  <div id="chatTabs">
+    <button class="chatTab active">#Sala</button>
+    <button class="chatTab">#ro</button>
+  </div>
+  <div id="chatMessages"></div>
+  <input id="chatInput" placeholder="Press Enter to chat...">
+</div>
+
+<!-- Player List -->
+<div id="playerList">
+  <div id="playerListTitle">Players</div>
+  <div id="playerEntries"></div>
+</div>
+
+<!-- Icon Buttons -->
+<div id="uiButtons">
+  <button class="uiBtn"><img src="https://i.imgur.com/atn6v9e.png"></button>
+  <button class="uiBtn"><img src="https://i.imgur.com/kGNkEAI.png"></button>
+  <button class="uiBtn"><img src="https://i.imgur.com/7BU2tah.png"></button>
+  <button class="uiBtn"><img src="https://i.imgur.com/R9E6kia.png"></button>
+</div>
+
+
+<!-- ========================= JAVASCRIPT ========================= -->
+<script>
+/* ============================================================
+   BASIC MULTIPLAYER STRUCTURE (Mocked)
+   ============================================================ */
+let username = "";
+let roomList = [
+  { id:1, name:"CheeseHunt 1", players:2 },
+  { id:2, name:"CheeseHunt 2", players:1 }
+];
+
+const lobbyDiv = document.getElementById("lobby");
+const roomListDiv = document.getElementById("roomList");
+const gameDiv = document.getElementById("game");
+
+function refreshRooms() {
+  roomListDiv.innerHTML = "";
+  roomList.forEach(room => {
+    const btn = document.createElement("button");
+    btn.textContent = `${room.name} (${room.players}/10)`;
+    btn.onclick = () => joinRoom(room.id);
+    roomListDiv.appendChild(btn);
+    roomListDiv.appendChild(document.createElement("br"));
+  });
+}
+function joinRoom(id) {
+  startGame();
+}
+function createRoom() {
+  const newRoom = {id:Math.random(), name:"New Room", players:1};
+  roomList.push(newRoom);
+  startGame();
+}
+
+document.getElementById("createRoomBtn").onclick = createRoom;
+document.getElementById("refreshRoomsBtn").onclick = refreshRooms;
+refreshRooms();
+
+
+/* ============================================================
+   GAME SETUP
+   ============================================================ */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const gravity = 0.5;
+const friction = 0.8;
+let cheeseCollected = 0;
+let keys = {};
+let isShaman = false;
+let objects = [];
+let cheeses = [];
+let players = [];
+
+class Entity {
+  constructor(x,y,w,h,img) {
+    this.x=x; this.y=y;
+    this.w=w; this.h=h;
+    this.vx=0; this.vy=0;
+    this.img=img;
+    this.onGround=false;
+  }
+  draw() {
+    if(this.img) ctx.drawImage(this.img,this.x,this.y,this.w,this.h);
+    else {
+      ctx.fillStyle="#f00";
+      ctx.fillRect(this.x,this.y,this.w,this.h);
+    }
+  }
+}
+
+class Block extends Entity {
+  constructor(x,y,w,h,img) { super(x,y,w,h,img); this.static=true; }
+}
+
+class Player extends Entity {
+  constructor(x,y,img){
+    super(x,y,40,40,img);
+    this.speed=0.5;
+    this.jumpStrength=10;
+  }
+  update(){
+    if(keys["ArrowLeft"]) this.vx-=this.speed;
+    if(keys["ArrowRight"]) this.vx+=this.speed;
+    this.vx*=friction;
+    this.vy+=gravity;
+    this.x+=this.vx;
+    this.y+=this.vy;
+
+    this.onGround=false;
+    for(let obj of objects){
+      if(this.collides(obj)){
+        if(this.vy>0 && this.y+this.h<=obj.y+this.vy){
+          this.y=obj.y-this.h;
+          this.vy=0;
+          this.onGround=true;
+        }
+      }
+    }
+    if(this.y+this.h>canvas.height){
+      this.y=canvas.height-this.h;
+      this.vy=0;
+      this.onGround=true;
+    }
+  }
+  collides(o){
+    return (this.x<o.x+o.w && this.x+this.w>o.x &&
+            this.y<o.y+o.h && this.y+this.h>o.y);
+  }
+}
+
+class Cheese extends Entity {
+  constructor(x,y,img){ super(x,y,30,30,img); }
+}
+
+let groundImg = new Image(); groundImg.src="https://i.imgur.com/WFjW4qM.png";
+let mouseImg = new Image(); mouseImg.src="https://i.imgur.com/NEuYwY4.png";
+let cheeseImg = new Image(); cheeseImg.src="https://i.imgur.com/dNQqPp3.png";
+let plankImg = new Image(); plankImg.src="https://i.imgur.com/0KqZq1a.png";
+
+let player;
+
+function startGame(){
+  username = document.getElementById("username").value || "Guest";
+  lobbyDiv.style.display="none";
+  gameDiv.style.display="flex";
+  initLevel();
+  loop();
+}
+
+function initLevel(){
+  cheeseCollected=0;
+  document.getElementById("scoreLabel").textContent="Cheese: 0";
+  objects=[];
+  cheeses=[];
+  players=[];
+  player=new Player(100,400,mouseImg);
+  players.push(player);
+
+  for(let i=0;i<10;i++) objects.push(new Block(i*96,500,96,40,groundImg));
+  objects.push(new Block(300,400,150,20,groundImg));
+  cheeses.push(new Cheese(320,360,cheeseImg));
+}
+
+/* ============================================================
+   SHAMAN TOOLS
+   ============================================================ */
+canvas.addEventListener("click", e=>{
+  if(isShaman){
+    const rect=canvas.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const y=e.clientY-rect.top;
+    objects.push(new Block(x-40,y-10,80,20,plankImg));
+  }
+});
+
+
+/* ============================================================
+   GAME LOOP
+   ============================================================ */
+function update(){
+  player.update();
+  if(keys[" "] && player.onGround){
+    player.vy=-player.jumpStrength;
+    player.onGround=false;
+  }
+
+  for(let i=cheeses.length-1;i>=0;i--){
+    let c=cheeses[i];
+    if(player.collides(c)){
+      cheeses.splice(i,1);
+      cheeseCollected++;
+      document.getElementById("scoreLabel").textContent="Cheese: "+cheeseCollected;
+    }
+  }
+}
+
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#87CEEB";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  for(let o of objects) o.draw();
+  for(let c of cheeses) c.draw();
+  for(let p of players) p.draw();
+}
+
+function loop(){
+  update();
+  render();
+  updatePlayerList();
+  requestAnimationFrame(loop);
+}
+
+
+/* ============================================================
+   INPUT + UI
+   ============================================================ */
+document.addEventListener("keydown",e=>{keys[e.key]=true;});
+document.addEventListener("keyup",e=>{keys[e.key]=false;});
+
+document.getElementById("toggleShaman").onclick=()=>{
+  isShaman=!isShaman;
+  document.getElementById("toggleShaman").textContent =
+    isShaman ? "Shaman: ON" : "Shaman: OFF";
+};
+
+document.getElementById("resetBtn").onclick=()=>initLevel();
+
+
+/* ============================================================
+   CHAT SYSTEM
+   ============================================================ */
+const chatMessages = document.getElementById("chatMessages");
+document.getElementById("chatInput").addEventListener("keydown", e=>{
+  if(e.key==="Enter"){
+    const msg=document.createElement("div");
+    msg.textContent = username+": "+e.target.value;
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    e.target.value="";
+  }
+});
+
+
+/* ============================================================
+   PLAYER LIST AUTO UPDATE
+   ============================================================ */
+function updatePlayerList(){
+  const div = document.getElementById("playerEntries");
+  div.innerHTML = "";
+  players.forEach((p,i)=>{
+    const e=document.createElement("div");
+    e.textContent = `${String(i+1).padStart(2,'0')}-${username}   ${
+      (Math.random()*60).toFixed(2)
+    }s`;
+    div.appendChild(e);
+  });
+}
+
+</script>
+</body>
+</html>
+
